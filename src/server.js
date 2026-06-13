@@ -1,10 +1,10 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { BrowserScraper } from '../browser-scraper.js';
-import { NvidiaNimClient } from '../nvidia-nim-client.js';
-import { QueueManager } from '../queue-manager.js';
-import { Logger } from '../logger.js';
+import { BrowserScraper } from './browser-scraper.js';
+import { NvidiaNimClient } from './nvidia-nim-client.js';
+import { QueueManager } from './queue-manager.js';
+import { Logger } from './logger.js';
 
 dotenv.config();
 
