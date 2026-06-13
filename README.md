@@ -1,12 +1,12 @@
-# NVIDIA NIM + Puppeteer Scraper
+# NVIDIA NIM + HTTP Scraper
 
-A powerful web scraper built with NVIDIA NIM LLM API and Puppeteer, deployed on Render.com.
+A powerful web scraper built with NVIDIA NIM LLM API and HTTP fetching, deployed on Render.com.
 
 ## Features
 
 - ✅ **AI-Powered Scraping** - Natural language instructions for data extraction
 - ✅ **LLM Integration** - NVIDIA NIM for intelligent content analysis
-- ✅ **Browser Automation** - Real browser scraping with Puppeteer
+- ✅ **HTTP Scraping** - Lightweight scraping with axios + cheerio
 - ✅ **Batch Processing** - Queue-based batch scraping
 - ✅ **Serverless Ready** - Deploy to Render.com (Free Tier)
 - ✅ **Container Ready** - Docker deployment
@@ -37,48 +37,32 @@ cp .env.example .env
 ### 3. Run Locally
 
 ```bash
-# Development mode
-npm run dev
-
-# Production mode
 npm start
 ```
 
 ## Deploy to Render.com
 
-### Option A: One-Click Deploy (Recommended)
+Your code is already deployed! Just click **"Manual Deploy"** in Render dashboard.
 
-1. Fork this repository to your GitHub account
-2. Go to [Render Dashboard](https://dashboard.render.com)
-3. Create a new **Web Service**
-4. Connect your GitHub repository
-5. Set environment variables in Render dashboard (mark as secret for API key):
+### Environment Variables
 
 | Variable | Value |
 |----------|-------|
-| `NVIDIA_NIM_API_KEY` | Your NVIDIA API key |
+| `NVIDIA_NIM_API_KEY` | **Your secret API key** |
 | `NVIDIA_NIM_BASE_URL` | `https://integrate.api.nvidia.com/v1` |
-| `NVIDIA_NIM_MODEL` | `llama-3.1-8b-instruct` |
-| `BROWSER_HEADLESS` | `true` |
-
-### Option B: Using render.yaml (Automatic)
-
-1. Push your code to GitHub
-2. Create a new **Blueprint** in Render
-3. Select your repository
-4. Render auto-detects `render.yaml` and creates the service
+| `NVIDIA_NIM_MODEL` | `deepseek-ai/deepseek-v4-flash` |
 
 ## Architecture
 
 ```
 ┌─────────────────┐     ┌──────────────┐     ┌──────────────────┐
-│   HTTP Client   │────▶│  Express API  │────▶│   Puppeteer      │
+│   HTTP Client   │────▶│  Express API  │────▶│   NVIDIA NIM     │
 └─────────────────┘     └──────────────┘     └──────────────────┘
-                              │                        │
-                              ▼                        ▼
-                    ┌──────────────────┐     ┌──────────────────┐
-                    │  NVIDIA NIM LLM  │     │  Chrome Headless   │
-                    └──────────────────┘     └──────────────────┘
+                              │
+                              ▼
+                    ┌──────────────────┐
+                    │  Web Page HTML   │
+                    └──────────────────┘
 ```
 
 ## API Endpoints
@@ -86,54 +70,41 @@ npm start
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/health` | GET | Health check |
-| `/scrape` | POST | Single page scrape |
+| `/scrape` | POST | Single page scrape with AI |
 | `/scrape/ai` | POST | AI-powered search & scrape |
 | `/scrape/batch` | POST | Batch processing |
 | `/jobs/:jobId` | GET | Job status |
 
 ## Example Usage
 
+### Health Check
+```bash
+curl https://browsertest-ujvg.onrender.com/health
+```
+
 ### Basic Scrape
 ```bash
-curl -X POST https://your-service.onrender.com/scrape \
+curl -X POST https://browsertest-ujvg.onrender.com/scrape \
   -H "Content-Type: application/json" \
   -d '{
     "url": "https://example.com",
-    "instructions": "Extract all product prices and names"
+    "instructions": "Extract page title and main content"
   }'
 ```
 
 ### AI-Powered Search
 ```bash
-curl -X POST https://your-service.onrender.com/scrape/ai \
+curl -X POST https://browsertest-ujvg.onrender.com/scrape/ai \
   -H "Content-Type: application/json" \
-  -d '{
-    "query": "latest tech news",
-    "maxPages": 3
-  }'
-```
-
-### Health Check
-```bash
-curl https://your-service.onrender.com/health
+  -d '{"query": "latest tech news", "maxPages": 3}'
 ```
 
 ## Environment Variables
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `NVIDIA_NIM_API_KEY` | Yes | - | NVIDIA API key |
-| `NVIDIA_NIM_BASE_URL` | Yes | - | API endpoint |
-| `NVIDIA_NIM_MODEL` | No | `deepseek-ai/deepseek-v4-flash` | LLM model |
-| `BROWSER_HEADLESS` | No | `true` | Headless mode |
-| `MAX_CONCURRENT_JOBS` | No | `2` | Concurrent jobs |
-
-## Dependencies
-
-- **puppeteer** - Browser automation
-- **@ai-sdk/openai** - AI SDK for NVIDIA NIM
-- **express** - Web framework
-- **winston** - Structured logging
+| Variable | Required | Default |
+|----------|----------|---------|
+| `NVIDIA_NIM_API_KEY` | Yes | - |
+| `NVIDIA_NIM_MODEL` | No | `deepseek-ai/deepseek-v4-flash` |
 
 ## License
 
