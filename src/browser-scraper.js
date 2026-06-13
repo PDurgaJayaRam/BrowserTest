@@ -103,24 +103,33 @@ export class BrowserScraper {
         const searchUrl = `https://duckduckgo.com/html/?q=${encodeURIComponent(searchQuery)}`;
         
         const response = await axios.get(searchUrl, {
-          timeout: 15000, // 15 second timeout
+          timeout: 20000, // 20 second timeout
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml'
           }
         });
 
+        console.log(`DuckDuckGo response status: ${response.status}`);
+        
         const $ = cheerio.load(response.data);
         const results = [];
 
-        // Extract search results - try multiple selectors
-        $('a.result__a-link, .result__title a, .result__a').each((i, link) => {
-          if (i < 5) { // Reduced from 10 to 5
+        // Extract search results - DuckDuckGo structure
+        $('.result__title a, .result__a, a[data-testid="result-title-a"]').each((i, link) => {
+          if (i < 10) {
             const href = $(link).attr('href');
             const title = $(link).text().trim();
-            if (href && (href.startsWith('http') || href.startsWith('/jobs'))) {
+            if (href && href.length > 10) {
+              // Handle DuckDuckGo redirect URLs
+              let finalUrl = href;
+              if (href.includes('duckduckgo.com/l/?uddg=')) {
+                const urlMatch = href.match(/uddg=([^&]+)/);
+                if (urlMatch) finalUrl = decodeURIComponent(urlMatch[1]);
+              }
               results.push({ 
-                title: title.substring(0, 100), 
-                url: href.startsWith('http') ? href : `https://naukri.com${href}`
+                title: title.substring(0, 200), 
+                url: finalUrl 
               });
             }
           }
@@ -129,11 +138,11 @@ export class BrowserScraper {
         console.log(`Found ${results.length} results for: ${searchQuery}`);
         allResults.push(...results);
       } catch (error) {
-        console.error(`Search scrape error for ${searchQuery}:`, error.message);
+        console.error(`Search error for ${searchQuery}:`, error.message);
       }
     }
 
-    return allResults.slice(0, 20); // Reduced from 50 to 20
+    return allResults.slice(0, 20);
   }
 
   async smartExtract(url, fields, nvidiaClient) {
