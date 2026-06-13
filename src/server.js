@@ -11,6 +11,13 @@ dotenv.config();
 const app = express();
 const logger = new Logger('server');
 
+// Log configuration
+console.log('=== NVIDIA NIM Scraper Starting ===');
+console.log('Model:', process.env.NVIDIA_NIM_MODEL || 'not set');
+console.log('Base URL:', process.env.NVIDIA_NIM_BASE_URL || 'not set');
+console.log('API Key: ***configured***');
+console.log('==================================');
+
 // Initialize services
 const nvidiaClient = new NvidiaNimClient(
   process.env.NVIDIA_NIM_API_KEY,
