@@ -7,12 +7,14 @@ import { QueueManager } from './queue-manager.js';
 import { Logger } from './logger.js';
 
 // Load .env from multiple possible paths
-const envPaths = ['./.env', './.env.local', '../.env'];
+const envPaths = ['./.env', './.env.local', '../.env', '/.env'];
 let envLoaded = false;
+
+// Try to load .env file
 for (const path of envPaths) {
   try {
     const result = dotenv.config({ path });
-    if (!result.error && result.parsed) {
+    if (!result.error) {
       console.log(`Loaded .env from: ${path}`);
       envLoaded = true;
       break;
@@ -22,20 +24,18 @@ for (const path of envPaths) {
   }
 }
 
-// Fallback: load from default path
-if (!envLoaded) {
-  dotenv.config();
-}
-
-const app = express();
-const logger = new Logger('server');
-
-// Log configuration
+// Log all NVIDIA-related env vars after loading
 console.log('=== NVIDIA NIM Scraper Starting ===');
-console.log('Model:', process.env.NVIDIA_NIM_MODEL || 'not set');
-console.log('Base URL:', process.env.NVIDIA_NIM_BASE_URL || 'not set');
-console.log('API Key exists:', process.env.NVIDIA_NIM_API_KEY ? 'YES' : 'NO');
-console.log('API Key prefix:', process.env.NVIDIA_NIM_API_KEY ? process.env.NVIDIA_NIM_API_KEY.substring(0, 20) + '...' : 'N/A');
+console.log('All NVIDIA env vars:');
+console.log('  NVIDIA_NIM_MODEL:', process.env.NVIDIA_NIM_MODEL);
+console.log('  NVIDIA_NIM_BASE_URL:', process.env.NVIDIA_NIM_BASE_URL);
+console.log('  NVIDIA_NIM_API_KEY:', process.env.NVIDIA_NIM_API_KEY ? 'SET' : 'NOT SET');
+console.log('All env vars containing "MODEL":');
+Object.keys(process.env).forEach(key => {
+  if (key.includes('MODEL')) {
+    console.log(`  ${key}: ${process.env[key]}`);
+  }
+});
 console.log('==================================');
 
 // Initialize services

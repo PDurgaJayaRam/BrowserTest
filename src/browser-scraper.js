@@ -23,11 +23,10 @@ export class BrowserScraper {
     try {
       // Use axios + cheerio for lightweight scraping
       const response = await axios.get(url, {
-        timeout: this.options.timeout,
+        timeout: 30000, // 30 second timeout for HTTP
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.5'
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
         }
       });
 
@@ -35,14 +34,25 @@ export class BrowserScraper {
       result.metadata.title = this.extractTitle(html);
       result.metadata.url = response.request.res.responseUrl || url;
 
+      // Extract text content for LLM
+      const $ = cheerio.load(html);
+      const textContent = $('body').text().trim().substring(0, 5000);
+
       if (selectors && selectors.length > 0) {
         result.data = this.extractWithSelectors(html, selectors);
       } else if (instructions) {
-        // Use LLM to understand and extract
-        result.data = await analyzeWithAI(html, instructions, nvidiaClient);
+        // Direct LLM call with shorter timeout
+        try {
+          result.data = await nvidiaClient.generateCompletion(
+            `Extract: ${instructions}\n\nContent:\n${textContent}`,
+            'Extract accurately.',
+            { maxTokens: 500, temperature: 0.5 }
+          );
+        } catch (aiError) {
+          result.data = { fallback_text: textContent.substring(0, 300), ai_error: aiError.message };
+        }
       } else {
-        // Smart extraction - let AI decide what to extract
-        result.data = await extractDataWithAI(html, nvidiaClient);
+        result.data = { extracted: textContent.substring(0, 300) };
       }
 
       return result;
@@ -74,16 +84,26 @@ export class BrowserScraper {
   }
 
   async aiScrape(query, maxPages, nvidiaClient) {
-    const searchQueries = await generateSearchQueries(query, nvidiaClient);
+    console.log(`AI Scrape called with query: ${query}, maxPages: ${maxPages}`);
+    
+    // Fallback search queries without API
+    const searchQueries = [
+      `${query}`,
+      `${query} jobs`,
+      `${query.replace(' ', '+')}+jobs`
+    ].slice(0, maxPages);
+
     const allResults = [];
 
-    for (const searchQuery of searchQueries.slice(0, maxPages)) {
+    for (const searchQuery of searchQueries) {
       try {
-        // Use DuckDuckGo HTML search (lighter than Google)
+        console.log(`Searching: ${searchQuery}`);
+        
+        // Use DuckDuckGo HTML search with short timeout
         const searchUrl = `https://duckduckgo.com/html/?q=${encodeURIComponent(searchQuery)}`;
         
         const response = await axios.get(searchUrl, {
-          timeout: this.options.timeout,
+          timeout: 15000, // 15 second timeout
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
           }
@@ -92,24 +112,28 @@ export class BrowserScraper {
         const $ = cheerio.load(response.data);
         const results = [];
 
-        // Extract search results
-        $('.result__title a').each((i, link) => {
-          if (i < 10) {
+        // Extract search results - try multiple selectors
+        $('a.result__a-link, .result__title a, .result__a').each((i, link) => {
+          if (i < 5) { // Reduced from 10 to 5
             const href = $(link).attr('href');
             const title = $(link).text().trim();
-            if (href && href.startsWith('http')) {
-              results.push({ title, url: href });
+            if (href && (href.startsWith('http') || href.startsWith('/jobs'))) {
+              results.push({ 
+                title: title.substring(0, 100), 
+                url: href.startsWith('http') ? href : `https://naukri.com${href}`
+              });
             }
           }
         });
 
+        console.log(`Found ${results.length} results for: ${searchQuery}`);
         allResults.push(...results);
       } catch (error) {
         console.error(`Search scrape error for ${searchQuery}:`, error.message);
       }
     }
 
-    return allResults.slice(0, 50);
+    return allResults.slice(0, 20); // Reduced from 50 to 20
   }
 
   async smartExtract(url, fields, nvidiaClient) {
