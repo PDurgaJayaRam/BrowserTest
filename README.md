@@ -1,111 +1,54 @@
 # NVIDIA NIM + HTTP Scraper
 
-A powerful web scraper built with NVIDIA NIM LLM API and HTTP fetching, deployed on Render.com.
+**LIVE at:** https://browsertest-ujvg.onrender.com
+
+## ✅ Service Status
+Your scraper is **LIVE** and running on Render.com Free tier!
+
+## Quick Test
+
+```bash
+# Health check
+curl https://browsertest-ujvg.onrender.com/health
+
+# Basic scrape (fallback mode - works without API key)
+curl -X POST https://browsertest-ujvg.onrender.com/scrape \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://example.com","instructions":"Extract title"}'
+```
 
 ## Features
 
-- ✅ **AI-Powered Scraping** - Natural language instructions for data extraction
-- ✅ **LLM Integration** - NVIDIA NIM for intelligent content analysis
-- ✅ **HTTP Scraping** - Lightweight scraping with axios + cheerio
-- ✅ **Batch Processing** - Queue-based batch scraping
-- ✅ **Serverless Ready** - Deploy to Render.com (Free Tier)
-- ✅ **Container Ready** - Docker deployment
+- ✅ **HTTP Scraping** - Lightweight (axios + cheerio)
+- ✅ **AI Extraction** - NVIDIA NIM integration (optional)
+- ✅ **Fallback Mode** - Works without API key
+- ✅ **Free Tier Ready** - Render.com compatible
 
-## Render.com Free Tier
+## Configure NVIDIA NIM (Optional)
 
-Render offers a generous free tier perfect for this scraper:
-- **750 hours/month** of free web service (enough for 24/7!)
-- **Automatic HTTPS**
-- **Custom domains**
-- **Auto-deploys** from GitHub
+To enable AI-powered extraction with your NVIDIA API key:
 
-## Quick Start
-
-### 1. Install Dependencies
-
-```bash
-npm install
-```
-
-### 2. Configure Environment
-
-```bash
-cp .env.example .env
-# Edit .env with your NVIDIA NIM API key
-```
-
-### 3. Run Locally
-
-```bash
-npm start
-```
-
-## Deploy to Render.com
-
-Your code is already deployed! Just click **"Manual Deploy"** in Render dashboard.
-
-### Environment Variables
-
-| Variable | Value |
-|----------|-------|
-| `NVIDIA_NIM_API_KEY` | **Your secret API key** |
-| `NVIDIA_NIM_BASE_URL` | `https://integrate.api.nvidia.com/v1` |
-| `NVIDIA_NIM_MODEL` | `deepseek-ai/deepseek-v4-flash` |
-
-## Architecture
-
-```
-┌─────────────────┐     ┌──────────────┐     ┌──────────────────┐
-│   HTTP Client   │────▶│  Express API  │────▶│   NVIDIA NIM     │
-└─────────────────┘     └──────────────┘     └──────────────────┘
-                              │
-                              ▼
-                    ┌──────────────────┐
-                    │  Web Page HTML   │
-                    └──────────────────┘
-```
+1. Go to [Render Dashboard](https://dashboard.render.com/web/services/srv-d8mni50js32c73cth4bg)
+2. Click **Environment** tab
+3. Add:
+   - **Key:** `NVIDIA_NIM_API_KEY`
+   - **Value:** `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`
+   - **Secret:** ✅ ON
 
 ## API Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/health` | GET | Health check |
-| `/scrape` | POST | Single page scrape with AI |
-| `/scrape/ai` | POST | AI-powered search & scrape |
-| `/scrape/batch` | POST | Batch processing |
-| `/jobs/:jobId` | GET | Job status |
+| `/scrape` | POST | Scrape with AI analysis |
+| `/scrape/ai` | POST | AI-powered search |
+| `/scrape/batch` | POST | Batch scraping |
 
-## Example Usage
+## Troubleshooting
 
-### Health Check
-```bash
-curl https://browsertest-ujvg.onrender.com/health
-```
+If you get 404 errors from NVIDIA API:
+1. Check the model exists at NVIDIA NIM
+2. Verify API key is correct
+3. Try model: `deepseek-ai/deepseek-r1` or `meta/llama3-8b-instruct`
 
-### Basic Scrape
-```bash
-curl -X POST https://browsertest-ujvg.onrender.com/scrape \
-  -H "Content-Type: application/json" \
-  -d '{
-    "url": "https://example.com",
-    "instructions": "Extract page title and main content"
-  }'
-```
-
-### AI-Powered Search
-```bash
-curl -X POST https://browsertest-ujvg.onrender.com/scrape/ai \
-  -H "Content-Type: application/json" \
-  -d '{"query": "latest tech news", "maxPages": 3}'
-```
-
-## Environment Variables
-
-| Variable | Required | Default |
-|----------|----------|---------|
-| `NVIDIA_NIM_API_KEY` | Yes | - |
-| `NVIDIA_NIM_MODEL` | No | `deepseek-ai/deepseek-v4-flash` |
-
-## License
-
-MIT
+The scraper has **fallback mode** - it works even without NVIDIA API! 🚀
