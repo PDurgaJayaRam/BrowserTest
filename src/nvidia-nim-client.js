@@ -1,5 +1,3 @@
-import { generateText } from 'ai';
-import { createOpenAI } from '@ai-sdk/openai';
 import axios from 'axios';
 
 export class NvidiaNimClient {
@@ -7,11 +5,6 @@ export class NvidiaNimClient {
     this.apiKey = apiKey;
     this.baseUrl = baseUrl;
     this.model = model;
-    
-    this.client = createOpenAI({
-      apiKey: apiKey,
-      baseURL: baseUrl
-    });
   }
 
   async generateCompletion(prompt, systemPrompt = null, options = {}) {
@@ -23,54 +16,33 @@ export class NvidiaNimClient {
     
     messages.push({ role: 'user', content: prompt });
 
-    const response = await generateText({
-      model: this.client(this.model),
-      messages,
-      maxTokens: options.maxTokens || 4096,
-      temperature: options.temperature || 0.7,
-      topP: options.topP || 0.9
-    });
-
-    return response.text;
-  }
-
-  // Direct API call for DeepSeek model with thinking support
-  async generateWithThinking(prompt, options = {}) {
-    const response = await axios.post(
-      `${this.baseUrl}/chat/completions`,
-      {
-        model: this.model,
-        messages: [{ role: 'user', content: prompt }],
-        temperature: options.temperature || 1,
-        top_p: options.top_p || 0.95,
-        max_tokens: options.max_tokens || 16384,
-        extra_body: {
-          chat_template_kwargs: {
-            thinking: options.thinking || false,
-            reasoning_effort: options.reasoning_effort || 'medium'
-          }
+    try {
+      const response = await axios.post(
+        `${this.baseUrl}/chat/completions`,
+        {
+          model: this.model,
+          messages,
+          max_tokens: options.maxTokens || 4096,
+          temperature: options.temperature || 0.7,
+          top_p: options.topP || 0.9
         },
-        stream: false
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json'
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: options.timeout || 60000
         }
-      }
-    );
+      );
 
-    const message = response.data.choices[0].message;
-    const reasoning = message.reasoning || message.reasoning_content || null;
-    
-    return {
-      content: message.content,
-      reasoning: reasoning
-    };
+      return response.data.choices[0].message.content;
+    } catch (error) {
+      throw new Error(`NVIDIA NIM API error: ${error.response?.data?.error?.message || error.message}`);
+    }
   }
 
   async summarizeContent(content, maxLength = 500) {
-    const prompt = `Summarize the following content in ${maxLength} characters or less. Focus on key information and main points:\n\n${content}`;
+    const prompt = `Summarize the following content in ${maxLength} characters or less. Focus on key information and main points:\n\n${content.substring(0, 8000)}`;
     
     return this.generateCompletion(prompt, 'You are a helpful summarization assistant.', {
       maxTokens: 500,
@@ -79,7 +51,7 @@ export class NvidiaNimClient {
   }
 
   async extractStructuredData(content, schema) {
-    const prompt = `Extract data from the following content according to this JSON schema:\n${JSON.stringify(schema, null, 2)}\n\nContent:\n${content.substring(0, 8000)}\n\nReturn ONLY valid JSON matching the schema.`;
+    const prompt = `Extract data from the following content according to this JSON schema:\n${JSON.stringify(schema, null, 2)}\n\nContent:\n${content.substring(0, 6000)}\n\nReturn ONLY valid JSON matching the schema.`;
     
     const response = await this.generateCompletion(prompt, 'You are a data extraction specialist. Return only valid JSON.', {
       maxTokens: 2048,
@@ -110,5 +82,40 @@ Format as valid JSON only.`;
       maxTokens: 1024,
       temperature: 0.5
     });
+  }
+
+  async generateWithThinking(prompt, options = {}) {
+    const response = await axios.post(
+      `${this.baseUrl}/chat/completions`,
+      {
+        model: this.model,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: options.temperature || 1,
+        top_p: options.top_p || 0.95,
+        max_tokens: options.max_tokens || 16384,
+        extra_body: {
+          chat_template_kwargs: {
+            thinking: options.thinking || false,
+            reasoning_effort: options.reasoning_effort || 'medium'
+          }
+        },
+        stream: false
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: options.timeout || 120000
+      }
+    );
+
+    const message = response.data.choices[0].message;
+    const reasoning = message.reasoning || message.reasoning_content || null;
+    
+    return {
+      content: message.content,
+      reasoning: reasoning
+    };
   }
 }
