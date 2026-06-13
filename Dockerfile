@@ -11,7 +11,7 @@ COPY package.json ./
 # Install dependencies
 RUN npm install --only=production
 
-# Copy source code
+# Copy all source files including .env
 COPY . .
 
 # Set NODE_ENV
