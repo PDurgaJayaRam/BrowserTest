@@ -22,6 +22,12 @@ export class NvidiaNimClient {
     console.log('=== NVIDIA NIM Debug ===');
     console.log('Endpoint:', endpoint);
     console.log('Model:', this.model);
+    console.log('API Key (first 20 chars):', this.apiKey ? this.apiKey.substring(0, 20) + '...' : 'MISSING');
+    console.log('Has API Key:', !!this.apiKey);
+
+    if (!this.apiKey) {
+      throw new Error('NVIDIA NIM API key is not configured');
+    }
 
     try {
       const response = await axios.post(
@@ -42,9 +48,11 @@ export class NvidiaNimClient {
         }
       );
 
+      console.log('Response Status:', response.status);
       return response.data.choices[0].message.content;
     } catch (error) {
-      console.error('NVIDIA NIM Error:', error.response?.status, error.response?.data);
+      console.error('NVIDIA NIM Error - Status:', error.response?.status);
+      console.error('NVIDIA NIM Error - Response:', error.response?.data);
       throw new Error(`NVIDIA NIM API error: ${error.response?.data?.error?.message || error.message}`);
     }
   }
