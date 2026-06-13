@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: nvidia-nim-scraper
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: NVIDIA_NIM_API_KEY
+        fromSecret: NVIDIA_NIM_API_KEY
+      - key: NVIDIA_NIM_BASE_URL
+        value: https://integrate.api.nvidia.com/v1
+      - key: NVIDIA_NIM_MODEL
+        value: deepseek-ai/deepseek-v4-flash
+      - key: BROWSER_HEADLESS
+        value: "true"
+      - key: BROWSER_TIMEOUT
+        value: "60000"
+      - key: MAX_CONCURRENT_JOBS
+        value: "2"
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
+    autoDeploy: true

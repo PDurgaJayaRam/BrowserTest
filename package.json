@@ -1,0 +1,41 @@
+{
+  "name": "nvidia-nim-browser-scraper",
+  "version": "1.0.0",
+  "description": "Perfect web scraper using NVIDIA NIM LLM API and Puppeteer, deployed on Render.com",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "build": "node build.js",
+    "deploy": "echo \"Push to GitHub and connect to Render.com for automatic deployment\"",
+    "test": "node src/test-setup.js"
+  },
+  "keywords": [
+    "scraper",
+    "nvidia-nim",
+    "puppeteer",
+    "web-scraping",
+    "render",
+    "serverless"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@ai-sdk/openai": "^4.0.0",
+    "agent-browser": "^0.1.0",
+    "puppeteer": "^22.0.0",
+    "express": "^4.18.2",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0",
+    "prettier": "^3.1.0",
+    "eslint": "^8.52.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

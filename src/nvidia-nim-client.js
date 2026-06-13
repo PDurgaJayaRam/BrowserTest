@@ -1,0 +1,114 @@
+import { generateText } from 'ai';
+import { createOpenAI } from '@ai-sdk/openai';
+import axios from 'axios';
+
+export class NvidiaNimClient {
+  constructor(apiKey, baseUrl, model) {
+    this.apiKey = apiKey;
+    this.baseUrl = baseUrl;
+    this.model = model;
+    
+    this.client = createOpenAI({
+      apiKey: apiKey,
+      baseURL: baseUrl
+    });
+  }
+
+  async generateCompletion(prompt, systemPrompt = null, options = {}) {
+    const messages = [];
+    
+    if (systemPrompt) {
+      messages.push({ role: 'system', content: systemPrompt });
+    }
+    
+    messages.push({ role: 'user', content: prompt });
+
+    const response = await generateText({
+      model: this.client(this.model),
+      messages,
+      maxTokens: options.maxTokens || 4096,
+      temperature: options.temperature || 0.7,
+      topP: options.topP || 0.9
+    });
+
+    return response.text;
+  }
+
+  // Direct API call for DeepSeek model with thinking support
+  async generateWithThinking(prompt, options = {}) {
+    const response = await axios.post(
+      `${this.baseUrl}/chat/completions`,
+      {
+        model: this.model,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: options.temperature || 1,
+        top_p: options.top_p || 0.95,
+        max_tokens: options.max_tokens || 16384,
+        extra_body: {
+          chat_template_kwargs: {
+            thinking: options.thinking || false,
+            reasoning_effort: options.reasoning_effort || 'medium'
+          }
+        },
+        stream: false
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    const message = response.data.choices[0].message;
+    const reasoning = message.reasoning || message.reasoning_content || null;
+    
+    return {
+      content: message.content,
+      reasoning: reasoning
+    };
+  }
+
+  async summarizeContent(content, maxLength = 500) {
+    const prompt = `Summarize the following content in ${maxLength} characters or less. Focus on key information and main points:\n\n${content}`;
+    
+    return this.generateCompletion(prompt, 'You are a helpful summarization assistant.', {
+      maxTokens: 500,
+      temperature: 0.3
+    });
+  }
+
+  async extractStructuredData(content, schema) {
+    const prompt = `Extract data from the following content according to this JSON schema:\n${JSON.stringify(schema, null, 2)}\n\nContent:\n${content.substring(0, 8000)}\n\nReturn ONLY valid JSON matching the schema.`;
+    
+    const response = await this.generateCompletion(prompt, 'You are a data extraction specialist. Return only valid JSON.', {
+      maxTokens: 2048,
+      temperature: 0.1
+    });
+
+    try {
+      return JSON.parse(response);
+    } catch (error) {
+      return { error: 'Failed to parse LLM response', raw: response };
+    }
+  }
+
+  async generateScrapingStrategy(url, targetInfo) {
+    const prompt = `Analyze this URL and target information to generate a web scraping strategy:
+URL: ${url}
+Target: ${targetInfo}
+
+Provide a JSON response with:
+- recommendedSelectors: array of CSS selectors to try
+- waitConditions: array of page load conditions
+- paginationSelectors: array of selectors for next page
+- dataExtractionFields: array of field names to extract
+
+Format as valid JSON only.`;
+    
+    return this.generateCompletion(prompt, 'You are a web scraping strategy expert.', {
+      maxTokens: 1024,
+      temperature: 0.5
+    });
+  }
+}
