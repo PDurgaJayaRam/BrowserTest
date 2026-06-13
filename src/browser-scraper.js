@@ -34,9 +34,9 @@ export class BrowserScraper {
       result.metadata.title = this.extractTitle(html);
       result.metadata.url = response.request.res.responseUrl || url;
 
-      // Extract text content for LLM
+      // Extract text content for LLM - reduce to 3000 chars for faster processing
       const $ = cheerio.load(html);
-      const textContent = $('body').text().trim().substring(0, 5000);
+      const textContent = $('body').text().trim().substring(0, 3000);
 
       if (selectors && selectors.length > 0) {
         result.data = this.extractWithSelectors(html, selectors);
@@ -46,13 +46,13 @@ export class BrowserScraper {
           result.data = await nvidiaClient.generateCompletion(
             `Extract: ${instructions}\n\nContent:\n${textContent}`,
             'Extract accurately.',
-            { maxTokens: 500, temperature: 0.5 }
+            { maxTokens: 300, temperature: 0.5 }
           );
         } catch (aiError) {
-          result.data = { fallback_text: textContent.substring(0, 300), ai_error: aiError.message };
+          result.data = { fallback_text: textContent.substring(0, 200), ai_error: aiError.message };
         }
       } else {
-        result.data = { extracted: textContent.substring(0, 300) };
+        result.data = { extracted: textContent.substring(0, 200) };
       }
 
       return result;

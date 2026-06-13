@@ -35,7 +35,7 @@ export class NvidiaNimClient {
         {
           model: this.model,
           messages,
-          max_tokens: options.maxTokens || 1000,
+          max_tokens: options.maxTokens || 500,
           temperature: options.temperature || 0.7,
           top_p: options.topP || 0.9
         },
@@ -44,7 +44,7 @@ export class NvidiaNimClient {
             'Authorization': `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json'
           },
-          timeout: 60000
+          timeout: 25000 // 25 second timeout
         }
       );
 
