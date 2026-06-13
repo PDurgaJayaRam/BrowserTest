@@ -16,8 +16,17 @@ export class NvidiaNimClient {
     
     messages.push({ role: 'user', content: prompt });
 
-    const endpoint = `${this.baseUrl.replace(/\/$/, "")}/chat/completions`;
-    console.log(`Calling NVIDIA NIM: ${endpoint} with model: ${this.model}`);
+    // Try different endpoint formats
+    let endpoint = this.baseUrl;
+    
+    // Ensure proper endpoint
+    if (!endpoint.endsWith('/chat/completions')) {
+      endpoint = endpoint.replace(/\/$/, "") + '/chat/completions';
+    }
+
+    console.log(`Calling NVIDIA NIM endpoint: ${endpoint}`);
+    console.log(`Model: ${this.model}`);
+    console.log(`Has API key: ${this.apiKey ? 'yes' : 'no'}`);
 
     try {
       const response = await axios.post(
@@ -36,11 +45,13 @@ export class NvidiaNimClient {
             'Accept': 'application/json'
           },
           timeout: options.timeout || 60000,
-          validateStatus: (status) => status < 500
+          validateStatus: (status) => true // Accept all responses
         }
       );
 
-      if (response.status >= 400) {
+      console.log(`Response status: ${response.status}`);
+      
+      if (response.status !== 200) {
         console.error('NVIDIA NIM API Response:', response.status, response.data);
         throw new Error(`API Error: ${response.status} - ${JSON.stringify(response.data)}`);
       }
