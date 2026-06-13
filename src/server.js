@@ -70,10 +70,22 @@ app.get('/debug', (req, res) => {
   res.json({
     nvidia_nim_model: process.env.NVIDIA_NIM_MODEL || 'not set',
     nvidia_nim_base_url: process.env.NVIDIA_NIM_BASE_URL || 'not set',
-    nvidia_nim_api_key: process.env.NVIDIA_NIM_API_KEY ? 'configured (first 20 chars: ' + process.env.NVIDIA_NIM_API_KEY.substring(0, 20) + '...)' : 'NOT SET',
+    nvidia_nim_api_key: process.env.NVIDIA_NIM_API_KEY ? 'configured (prefix: ' + process.env.NVIDIA_NIM_API_KEY.substring(0, 20) + '...)' : 'NOT SET',
     port: process.env.PORT || '10000 (default)',
     node_env: process.env.NODE_ENV || 'not set'
   });
+});
+
+// NVIDIA API test endpoint
+app.get('/test-nvidia', async (req, res) => {
+  try {
+    console.log('Testing NVIDIA API...');
+    const testResult = await nvidiaClient.generateCompletion('Say hello!');
+    res.json({ success: true, response: testResult });
+  } catch (error) {
+    console.error('NVIDIA test error:', error.message);
+    res.json({ success: false, error: error.message });
+  }
 });
 
 // Single scrape
