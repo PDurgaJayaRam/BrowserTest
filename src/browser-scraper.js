@@ -1,5 +1,5 @@
 import axios from 'axios';
-import * as cheerio from 'cheerio';
+import cheerio from 'cheerio';
 import { analyzeWithAI, extractDataWithAI, generateSearchQueries } from './ai-scraper.js';
 
 export class BrowserScraper {
