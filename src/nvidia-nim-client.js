@@ -16,9 +16,12 @@ export class NvidiaNimClient {
     
     messages.push({ role: 'user', content: prompt });
 
+    const endpoint = `${this.baseUrl.replace(/\/$/, "")}/chat/completions`;
+    console.log(`Calling NVIDIA NIM: ${endpoint} with model: ${this.model}`);
+
     try {
       const response = await axios.post(
-        `${this.baseUrl}/chat/completions`,
+        endpoint,
         {
           model: this.model,
           messages,
@@ -29,14 +32,22 @@ export class NvidiaNimClient {
         {
           headers: {
             'Authorization': `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
           },
-          timeout: options.timeout || 60000
+          timeout: options.timeout || 60000,
+          validateStatus: (status) => status < 500
         }
       );
 
+      if (response.status >= 400) {
+        console.error('NVIDIA NIM API Response:', response.status, response.data);
+        throw new Error(`API Error: ${response.status} - ${JSON.stringify(response.data)}`);
+      }
+
       return response.data.choices[0].message.content;
     } catch (error) {
+      console.error('NVIDIA NIM Error:', error.response?.status, error.response?.data || error.message);
       throw new Error(`NVIDIA NIM API error: ${error.response?.data?.error?.message || error.message}`);
     }
   }
