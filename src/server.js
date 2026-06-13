@@ -52,6 +52,10 @@ const scraper = new BrowserScraper({
 
 const queueManager = new QueueManager(process.env.REDIS_URL);
 
+// Initialize Express app
+const app = express();
+const logger = new Logger('server');
+
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
