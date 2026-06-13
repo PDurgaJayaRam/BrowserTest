@@ -58,7 +58,22 @@ app.use(express.json({ limit: '10mb' }));
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    nvidia_configured: !!process.env.NVIDIA_NIM_API_KEY
+  });
+});
+
+// Debug endpoint
+app.get('/debug', (req, res) => {
+  res.json({
+    nvidia_nim_model: process.env.NVIDIA_NIM_MODEL || 'not set',
+    nvidia_nim_base_url: process.env.NVIDIA_NIM_BASE_URL || 'not set',
+    nvidia_nim_api_key: process.env.NVIDIA_NIM_API_KEY ? 'configured (first 20 chars: ' + process.env.NVIDIA_NIM_API_KEY.substring(0, 20) + '...)' : 'NOT SET',
+    port: process.env.PORT || '10000 (default)',
+    node_env: process.env.NODE_ENV || 'not set'
+  });
 });
 
 // Single scrape
