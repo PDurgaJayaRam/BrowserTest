@@ -4,6 +4,7 @@ export class NvidiaNimClient {
   constructor(apiKey, baseUrl, model) {
     this.apiKey = apiKey;
     this.baseUrl = baseUrl || 'https://integrate.api.nvidia.com/v1';
+    // Try without the path prefix if model includes it
     this.model = model || 'deepseek-ai/deepseek-v4-flash';
   }
 
@@ -16,13 +17,11 @@ export class NvidiaNimClient {
     
     messages.push({ role: 'user', content: prompt });
 
-    // Full endpoint URL
     const endpoint = `${this.baseUrl.replace(/\/+$/, "")}/chat/completions`;
 
     console.log('=== NVIDIA NIM Debug ===');
     console.log('Endpoint:', endpoint);
     console.log('Model:', this.model);
-    console.log('Has API Key:', this.apiKey ? `yes (${this.apiKey.substring(0, 10)}...)` : 'no');
 
     try {
       const response = await axios.post(
@@ -37,34 +36,38 @@ export class NvidiaNimClient {
         {
           headers: {
             'Authorization': `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
+            'Content-Type': 'application/json'
           },
           timeout: 60000
         }
       );
 
-      console.log('Response Status:', response.status);
-      console.log('Response OK:', response.status === 200);
-
       return response.data.choices[0].message.content;
     } catch (error) {
-      console.error('NVIDIA NIM Error Details:');
-      console.error('  Status:', error.response?.status);
-      console.error('  Data:', error.response?.data);
-      console.error('  Message:', error.message);
-      
+      console.error('NVIDIA NIM Error:', error.response?.status, error.response?.data);
       throw new Error(`NVIDIA NIM API error: ${error.response?.data?.error?.message || error.message}`);
     }
   }
 
-  // Simple test method
-  async testConnection() {
+  async summarizeContent(content, maxLength = 500) {
+    const prompt = `Summarize: ${content.substring(0, 8000)}`;
+    return this.generateCompletion(prompt, 'Summarize this content.', { maxTokens: 500 });
+  }
+
+  async extractStructuredData(content, schema) {
+    const prompt = `Extract data according to schema: ${JSON.stringify(schema)}\n\nContent: ${content.substring(0, 6000)}\n\nReturn valid JSON only.`;
+    
+    const response = await this.generateCompletion(prompt, 'Extract JSON data.', { maxTokens: 2048 });
+
     try {
-      const result = await this.generateCompletion('Say hello!');
-      return { success: true, response: result };
-    } catch (error) {
-      return { success: false, error: error.message };
+      return JSON.parse(response);
+    } catch {
+      return { error: 'Parse failed', raw: response };
     }
+  }
+
+  async generateScrapingStrategy(url, targetInfo) {
+    const prompt = `Scraping strategy for: ${url}\nTarget: ${targetInfo}\nReturn JSON with: recommendedSelectors, waitConditions, dataExtractionFields`;
+    return this.generateCompletion(prompt, 'Web scraping expert.', { maxTokens: 1024 });
   }
 }
